@@ -20,20 +20,24 @@ const { NotImplementedError } = require("../extensions/index.js");
  *
  */
 class VigenereCipheringMachine {
-  constructor(reverse = true) {
-    this.reverse = reverse;
+  constructor(notReverse = true) {
+    this.notReverse = notReverse;
   }
 
   encrypt(message, key) {
     if (!message || !key) throw new Error("Incorrect arguments!");
 
-    const messageUpper = message.toUpperCase();
+    let messageUpper = message.toUpperCase();
+    if (!this.notReverse) {
+      messageUpper = messageUpper.split("").reverse().join("");
+    }
+
     let encryptedMessage = messageUpper;
+
     let lengthLettersInMessage;
     if (/[A-Z]/g.test(messageUpper)) {
       lengthLettersInMessage = messageUpper.match(/[A-Z]/g).length;
     } else {
-      if (!this.reverse) return encryptedMessage.split("").reverse().join("");
       return encryptedMessage;
     }
 
@@ -46,8 +50,17 @@ class VigenereCipheringMachine {
       if (/[A-Z]/g.test(messageUpper[i])) {
         const indexInAlphabetLetterMessage = messageUpper.charCodeAt(i) - 65;
         const indexInAlphabetLetterKey = trueKey.charCodeAt(j) - 65;
-        const indexInAlphabetLetterEncryptedMessage =
-          ((indexInAlphabetLetterMessage + indexInAlphabetLetterKey) % 26) + 65;
+        let indexInAlphabetLetterEncryptedMessage;
+        if (this.notReverse) {
+          indexInAlphabetLetterEncryptedMessage =
+            ((indexInAlphabetLetterMessage + indexInAlphabetLetterKey) % 26) +
+            65;
+        } else {
+          indexInAlphabetLetterEncryptedMessage =
+            ((indexInAlphabetLetterKey - indexInAlphabetLetterMessage + 26) %
+              26) +
+            65;
+        }
         const letterEncryptedMessage = String.fromCharCode(
           indexInAlphabetLetterEncryptedMessage
         );
@@ -55,24 +68,35 @@ class VigenereCipheringMachine {
           encryptedMessage.substring(0, i) +
           letterEncryptedMessage +
           encryptedMessage.substring(i + 1);
+        console.log(encryptedMessage);
+
         j++;
       }
     }
-    if (!this.reverse) return encryptedMessage.split("").reverse().join("");
+
     return encryptedMessage;
   }
 
   decrypt(encryptedMessage, key) {
     if (!encryptedMessage || !key) throw new Error("Incorrect arguments!");
 
-    const encryptedMessageUpper = encryptedMessage.toUpperCase();
+    let encryptedMessageUpper = encryptedMessage.toUpperCase();
+    if (!this.notReverse) {
+      encryptedMessageUpper = encryptedMessageUpper
+        .split("")
+        .reverse()
+        .join("");
+    }
+
     let message = encryptedMessageUpper;
+
     let lengthLettersInEncryptedMessage;
     if (/[A-Z]/g.test(encryptedMessageUpper)) {
       lengthLettersInEncryptedMessage =
         encryptedMessageUpper.match(/[A-Z]/g).length;
     } else {
-      if (!this.reverse) return encryptedMessage.split("").reverse().join("");
+      if (!this.notReverse)
+        return encryptedMessage.split("").reverse().join("");
       return encryptedMessage;
     }
 
@@ -85,16 +109,23 @@ class VigenereCipheringMachine {
       if (/[A-Z]/g.test(encryptedMessageUpper[i])) {
         const indexInAlphabetLetterEncryptedMessage =
           encryptedMessageUpper.charCodeAt(i) - 65;
-        // console.log(indexInAlphabetLetterEncryptedMessage);
         const indexInAlphabetLetterKey = trueKey.charCodeAt(j) - 65;
-        // console.log(indexInAlphabetLetterKey);
-        const indexInAlphabetLetterMessage =
-          ((indexInAlphabetLetterEncryptedMessage -
-            indexInAlphabetLetterKey +
-            52) %
-            26) +
-          65;
-        console.log(indexInAlphabetLetterMessage);
+        let indexInAlphabetLetterMessage;
+        if (this.notReverse) {
+          indexInAlphabetLetterMessage =
+            ((indexInAlphabetLetterEncryptedMessage -
+              indexInAlphabetLetterKey +
+              26) %
+              26) +
+            65;
+        } else {
+          indexInAlphabetLetterMessage =
+            ((indexInAlphabetLetterKey -
+              indexInAlphabetLetterEncryptedMessage +
+              26) %
+              26) +
+            65;
+        }
         const letterEncryptedMessage = String.fromCharCode(
           indexInAlphabetLetterMessage
         );
@@ -102,17 +133,13 @@ class VigenereCipheringMachine {
           message.substring(0, i) +
           letterEncryptedMessage +
           message.substring(i + 1);
+
         j++;
       }
     }
-    if (!this.reverse) return encryptedMessage.split("").reverse().join("");
     return message;
   }
 }
-
-const directMachine = new VigenereCipheringMachine();
-const a = directMachine.encrypt("attack at dawn!", "alphonse");
-console.log(directMachine.decrypt(a, "alphonse"));
 
 module.exports = {
   VigenereCipheringMachine,
